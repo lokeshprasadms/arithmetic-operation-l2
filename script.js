@@ -29,6 +29,11 @@ const finalAccuracyElement = document.getElementById('final-accuracy');
 const operations = [
     { 
         symbol: '+', 
+        display: (a, b, result, missing) => {
+            if (missing === 'a') return `<span class="missing">_</span> + ${b} = ${result}`;
+            if (missing === 'b') return `${a} + <span class="missing">_</span> = ${result}`;
+            return `${a} + ${b} = <span class="missing">_</span>`;
+        },
         func: (a, b) => a + b, 
         weight: 20,
         generate: () => {
@@ -39,6 +44,11 @@ const operations = [
     },
     { 
         symbol: '-', 
+        display: (a, b, result, missing) => {
+            if (missing === 'a') return `<span class="missing">_</span> - ${b} = ${result}`;
+            if (missing === 'b') return `${a} - <span class="missing">_</span> = ${result}`;
+            return `${a} - ${b} = <span class="missing">_</span>`;
+        },
         func: (a, b) => a - b, 
         weight: 20,
         generate: () => {
@@ -49,6 +59,11 @@ const operations = [
     },
     { 
         symbol: '×', 
+        display: (a, b, result, missing) => {
+            if (missing === 'a') return `<span class="missing">_</span> × ${b} = ${result}`;
+            if (missing === 'b') return `${a} × <span class="missing">_</span> = ${result}`;
+            return `${a} × ${b} = <span class="missing">_</span>`;
+        },
         func: (a, b) => a * b, 
         weight: 25,
         generate: () => {
@@ -59,6 +74,11 @@ const operations = [
     },
     { 
         symbol: '÷', 
+        display: (a, b, result, missing) => {
+            if (missing === 'a') return `<span class="missing">_</span> ÷ ${b} = ${result}`;
+            if (missing === 'b') return `${a} ÷ <span class="missing">_</span> = ${result}`;
+            return `${a} ÷ ${b} = <span class="missing">_</span>`;
+        },
         func: (a, b) => a / b, 
         weight: 15,
         generate: () => {
@@ -70,6 +90,11 @@ const operations = [
     },
     { 
         symbol: '^', 
+        display: (a, b, result, missing) => {
+            if (missing === 'a') return `<span class="missing">_</span>^${b} = ${result}`;
+            if (missing === 'b') return `${a}^<span class="missing">_</span> = ${result}`;
+            return `${a}^${b} = <span class="missing">_</span>`;
+        },
         func: (a, b) => Math.pow(a, b), 
         weight: 10,
         generate: () => {
@@ -80,6 +105,10 @@ const operations = [
     },
     { 
         symbol: '√', 
+        display: (a, b, result, missing) => {
+            if (missing === 'a') return `√<span class="missing">_</span> = ${result}`;
+            return `√${a} = <span class="missing">_</span>`;
+        },
         func: (a, b) => Math.pow(a, 1/b), 
         weight: 5,
         generate: () => {
@@ -91,12 +120,17 @@ const operations = [
     },
     { 
         symbol: '%', 
+        display: (a, b, result, missing) => {
+            if (missing === 'a') return `<span class="missing">_</span> % ${b} = ${result}`;
+            if (missing === 'b') return `${a} % <span class="missing">_</span> = ${result}`;
+            return `${a} % ${b} = <span class="missing">_</span>`;
+        },
         func: (a, b) => a % b, 
         weight: 5,
         generate: () => {
             const b = Math.floor(Math.random() * 10) + 2; // 2-11
             const result = Math.floor(Math.random() * b); // 0 to b-1
-            const a = b * Math.floor(Math.random() * 10 + 1) + result; // Ensure clean modulo
+            const a = b * (Math.floor(Math.random() * 10) + 1) + result; // Ensure clean modulo
             return { a, b, result };
         }
     }
@@ -118,48 +152,21 @@ function getRandomOperation() {
 function generateProblem() {
     const operation = getRandomOperation();
     let { a, b, result } = operation.generate();
-    let missingPos, problemStr;
+    let missingPos, missing;
     
     // Randomly decide which part to make missing (0: a, 1: b, 2: result)
     missingPos = Math.floor(Math.random() * 3);
     
-    // Handle special cases for square root and exponent
-    if (operation.symbol === '√') {
-        // For square roots, we only show √a = b format
-        if (missingPos === 0) {
-            problemStr = `√<span class="missing">_</span> = ${result}`;
-            currentProblem = { a, b, result, operation, missing: 'a' };
-        } else {
-            problemStr = `√${a} = <span class="missing">_</span>`;
-            currentProblem = { a, b, result, operation, missing: 'result' };
-        }
-    } 
-    else if (operation.symbol === '^') {
-        // For exponents, handle all three positions
-        if (missingPos === 0) {
-            problemStr = `<span class="missing">_</span>^${b} = ${result}`;
-            currentProblem = { a, b, result, operation, missing: 'a' };
-        } else if (missingPos === 1) {
-            problemStr = `${a}^<span class="missing">_</span> = ${result}`;
-            currentProblem = { a, b, result, operation, missing: 'b' };
-        } else {
-            problemStr = `${a}^${b} = <span class="missing">_</span>`;
-            currentProblem = { a, b, result, operation, missing: 'result' };
-        }
-    }
-    else {
-        // For other operations
-        if (missingPos === 0) {
-            problemStr = `<span class="missing">_</span> ${operation.symbol} ${b} = ${result}`;
-            currentProblem = { a, b, result, operation, missing: 'a' };
-        } else if (missingPos === 1) {
-            problemStr = `${a} ${operation.symbol} <span class="missing">_</span> = ${result}`;
-            currentProblem = { a, b, result, operation, missing: 'b' };
-        } else {
-            problemStr = `${a} ${operation.symbol} ${b} = <span class="missing">_</span>`;
-            currentProblem = { a, b, result, operation, missing: 'result' };
-        }
-    }
+    // Determine which part is missing
+    if (missingPos === 0) missing = 'a';
+    else if (missingPos === 1) missing = 'b';
+    else missing = 'result';
+    
+    // Generate the problem string using the operation's display function
+    const problemStr = operation.display(a, b, result, missing);
+    
+    // Set up the current problem
+    currentProblem = { a, b, result, operation, missing };
     
     problemElement.innerHTML = problemStr;
     answerInput.value = '';
@@ -345,4 +352,5 @@ document.addEventListener('visibilitychange', () => {
         answerInput.focus();
     }
 });
+
 
