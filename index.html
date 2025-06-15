@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arithmetic Operation L-2 (Advanced)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen" class="screen">
+            <h1>Arithmetic Operation L-2</h1>
+            <p>Advanced arithmetic challenges with larger numbers and complex operations</p>
+            <button id="start-btn" class="btn">Start Game</button>
+        </div>
+        
+        <div id="game-screen" class="screen hidden">
+            <div class="score-container">
+                <div>Score: <span id="score">0</span></div>
+                <div>Time: <span id="time">60</span>s</div>
+            </div>
+            
+            <div id="problem" class="problem"></div>
+            
+            <div class="input-container">
+                <input type="number" id="answer" placeholder="Enter answer" autofocus>
+                <button id="submit-btn" class="btn">Submit</button>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
+            
+            <div class="stats">
+                <div>Correct: <span id="correct">0</span></div>
+                <div>Incorrect: <span id="incorrect">0</span></div>
+                <div>Accuracy: <span id="accuracy">0</span>%</div>
+            </div>
+        </div>
+        
+        <div id="result-screen" class="screen hidden">
+            <h2>Game Over!</h2>
+            <div class="final-score">Final Score: <span id="final-score">0</span></div>
+            <div class="final-accuracy">Accuracy: <span id="final-accuracy">0</span>%</div>
+            <button id="restart-btn" class="btn">Play Again</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
