@@ -27,13 +27,79 @@ const finalAccuracyElement = document.getElementById('final-accuracy');
 
 // Operations with weights for probability distribution
 const operations = [
-    { symbol: '+', func: (a, b) => a + b, weight: 20 },
-    { symbol: '-', func: (a, b) => a - b, weight: 20 },
-    { symbol: '×', func: (a, b) => a * b, weight: 25 },
-    { symbol: '÷', func: (a, b) => a / b, weight: 15 },
-    { symbol: '^', func: (a, b) => Math.pow(a, b), weight: 10, maxB: 3 },
-    { symbol: '√', func: (a, b) => Math.pow(a, 1/b), weight: 5, maxA: 1000, minB: 2, maxB: 3 },
-    { symbol: '%', func: (a, b) => a % b, weight: 5 }
+    { 
+        symbol: '+', 
+        func: (a, b) => a + b, 
+        weight: 20,
+        generate: () => {
+            const a = Math.floor(Math.random() * 50) + 1;
+            const b = Math.floor(Math.random() * 50) + 1;
+            return { a, b, result: a + b };
+        }
+    },
+    { 
+        symbol: '-', 
+        func: (a, b) => a - b, 
+        weight: 20,
+        generate: () => {
+            const a = Math.floor(Math.random() * 100) + 1;
+            const b = Math.floor(Math.random() * a) + 1;
+            return { a, b, result: a - b };
+        }
+    },
+    { 
+        symbol: '×', 
+        func: (a, b) => a * b, 
+        weight: 25,
+        generate: () => {
+            const a = Math.floor(Math.random() * 12) + 1;
+            const b = Math.floor(Math.random() * 12) + 1;
+            return { a, b, result: a * b };
+        }
+    },
+    { 
+        symbol: '÷', 
+        func: (a, b) => a / b, 
+        weight: 15,
+        generate: () => {
+            const b = Math.floor(Math.random() * 10) + 1;
+            const result = Math.floor(Math.random() * 10) + 1;
+            const a = b * result;
+            return { a, b, result };
+        }
+    },
+    { 
+        symbol: '^', 
+        func: (a, b) => Math.pow(a, b), 
+        weight: 10,
+        generate: () => {
+            const a = Math.floor(Math.random() * 5) + 2; // Base 2-6
+            const b = Math.floor(Math.random() * 3) + 2; // Power 2-4
+            return { a, b, result: Math.pow(a, b) };
+        }
+    },
+    { 
+        symbol: '√', 
+        func: (a, b) => Math.pow(a, 1/b), 
+        weight: 5,
+        generate: () => {
+            const b = 2; // Only square roots for now
+            const result = Math.floor(Math.random() * 10) + 1; // 1-10
+            const a = Math.pow(result, b);
+            return { a, b, result };
+        }
+    },
+    { 
+        symbol: '%', 
+        func: (a, b) => a % b, 
+        weight: 5,
+        generate: () => {
+            const b = Math.floor(Math.random() * 10) + 2; // 2-11
+            const result = Math.floor(Math.random() * b); // 0 to b-1
+            const a = b * Math.floor(Math.random() * 10 + 1) + result; // Ensure clean modulo
+            return { a, b, result };
+        }
+    }
 ];
 
 // Get random operation based on weights
@@ -48,35 +114,18 @@ function getRandomOperation() {
     return operations[0];
 }
 
-// Generate a random number within range, with weighted distribution
-function getRandomNumber(min, max, center) {
-    // Use normal distribution to get more numbers around the center
-    let num;
-    do {
-        const u = 0.5 - Math.random();
-        const v = 0.5 - Math.random();
-        num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v) * 0.2 + 0.5; // Normal distribution
-        num = Math.min(Math.max(num, 0), 1); // Clamp between 0 and 1
-        num = Math.floor(min + num * (max - min + 1));
-    } while (num < min || num > max);
-    
-    return num;
-}
-
 // Generate a math problem
 function generateProblem() {
     const operation = getRandomOperation();
-    let a, b, result, missingPos, problemStr;
+    let { a, b, result } = operation.generate();
+    let missingPos, problemStr;
     
-    // Special handling for square root
+    // Randomly decide which part to make missing (0: a, 1: b, 2: result)
+    missingPos = Math.floor(Math.random() * 3);
+    
+    // Handle special cases for square root and exponent
     if (operation.symbol === '√') {
-        b = getRandomNumber(operation.minB || 2, operation.maxB || 3); // Root (2 or 3)
-        result = getRandomNumber(2, operation.maxA ? Math.min(10, operation.maxA) : 10); // Result (number being rooted)
-        a = Math.pow(result, b); // Calculate the radicand
-        
-        // Randomly decide which part to make missing
-        missingPos = Math.floor(Math.random() * 2);
-        
+        // For square roots, we only show √a = b format
         if (missingPos === 0) {
             problemStr = `√<span class="missing">_</span> = ${result}`;
             currentProblem = { a, b, result, operation, missing: 'a' };
@@ -85,15 +134,8 @@ function generateProblem() {
             currentProblem = { a, b, result, operation, missing: 'result' };
         }
     } 
-    // Handle exponentiation
     else if (operation.symbol === '^') {
-        a = getRandomNumber(2, operation.maxA || 10);
-        b = getRandomNumber(2, operation.maxB || 3);
-        result = operation.func(a, b);
-        
-        // Randomly decide which part to make missing
-        missingPos = Math.floor(Math.random() * 3);
-        
+        // For exponents, handle all three positions
         if (missingPos === 0) {
             problemStr = `<span class="missing">_</span>^${b} = ${result}`;
             currentProblem = { a, b, result, operation, missing: 'a' };
@@ -105,37 +147,8 @@ function generateProblem() {
             currentProblem = { a, b, result, operation, missing: 'result' };
         }
     }
-    // Handle other operations
     else {
-        // For division, ensure clean division
-        if (operation.symbol === '÷') {
-            b = getRandomNumber(1, 12);
-            result = getRandomNumber(1, 20);
-            a = b * result;
-        } 
-        // For modulo, ensure positive results
-        else if (operation.symbol === '%') {
-            b = getRandomNumber(2, 20);
-            result = getRandomNumber(0, b - 1);
-            const multiplier = getRandomNumber(1, 10);
-            a = b * multiplier + result;
-        }
         // For other operations
-        else {
-            a = getRandomNumber(1, 100);
-            b = getRandomNumber(1, 100);
-            result = operation.func(a, b);
-            
-            // Ensure positive results for subtraction
-            if (operation.symbol === '-' && result < 0) {
-                [a, b] = [b, a]; // Swap to ensure positive result
-                result = a - b;
-            }
-        }
-        
-        // Randomly decide which part to make missing
-        missingPos = Math.floor(Math.random() * 3);
-        
         if (missingPos === 0) {
             problemStr = `<span class="missing">_</span> ${operation.symbol} ${b} = ${result}`;
             currentProblem = { a, b, result, operation, missing: 'a' };
@@ -164,8 +177,14 @@ function generateProblem() {
 function checkAnswer() {
     if (!gameActive) return;
     
-    const userAnswer = parseFloat(answerInput.value);
-    if (isNaN(userAnswer)) {
+    const userAnswer = answerInput.value.trim();
+    if (!userAnswer) {
+        showFeedback('Please enter an answer', 'incorrect');
+        return;
+    }
+    
+    const userNum = parseFloat(userAnswer);
+    if (isNaN(userNum)) {
         showFeedback('Please enter a valid number', 'incorrect');
         return;
     }
@@ -184,18 +203,35 @@ function checkAnswer() {
         case 'result':
             correctAnswer = result;
             break;
+        default:
+            correctAnswer = result;
     }
     
-    // Special handling for floating point comparison
-    isCorrect = Math.abs(userAnswer - correctAnswer) < 0.0001;
+    // Handle floating point comparison with tolerance
+    const tolerance = 0.0001;
+    isCorrect = Math.abs(userNum - correctAnswer) < tolerance;
+    
+    // For modulo operations, also accept equivalent answers
+    if (operation.symbol === '%' && !isCorrect) {
+        const modResult = correctAnswer % 1 === 0 ? Math.round(userNum) % b : userNum % b;
+        isCorrect = Math.abs(modResult - correctAnswer) < tolerance;
+    }
     
     if (isCorrect) {
         score += 10;
         correctAnswers++;
         showFeedback('Correct!', 'correct');
     } else {
+        // For division, show fraction if answer is close to a fraction
+        let correctAnswerStr = correctAnswer.toString();
+        if (operation.symbol === '÷' && !Number.isInteger(correctAnswer)) {
+            const [whole, decimal] = correctAnswer.toString().split('.');
+            if (decimal && decimal.length > 2) {
+                correctAnswerStr = correctAnswer.toFixed(2);
+            }
+        }
         incorrectAnswers++;
-        showFeedback(`Incorrect. The answer was ${correctAnswer}`, 'incorrect');
+        showFeedback(`Incorrect. The answer was ${correctAnswerStr}`, 'incorrect');
     }
     
     // Update score display
@@ -309,3 +345,4 @@ document.addEventListener('visibilitychange', () => {
         answerInput.focus();
     }
 });
+
